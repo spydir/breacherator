@@ -1,6 +1,6 @@
 import os
 import re
-import json
+import gzip
 
 # Regular expression pattern to match non-ASCII characters
 non_ascii_pattern = '[^\x00-\x7F\x80-\xFF\u001c]+'
@@ -17,23 +17,37 @@ def clean_string(s):
 
 
 def clean_json_file(filepath):
-    # Create a new filename for the cleaned JSON file
-    cleaned_filename = os.path.splitext(filepath)[0] + "_clean.json"
+    if filepath.endswith('.gz'):
+        # Create a new filename for the cleaned JSON file
+        cleaned_filename = os.path.splitext(filepath)[0] + "_clean.json"
 
-    # Read the entire JSON file into memory
-    print(f"Reading {filepath}...")
-    with open(filepath, 'r', encoding='utf-8') as file:
-        file_contents = file.read()
+        try:
+            # Open the input file as a gzip file
+            print(f"Reading {filepath}...")
+            with gzip.open(filepath, 'rb') as input_file:
+                # Open the output file as a regular file
+                with open(cleaned_filename, 'wb') as output_file:
+                    # Process the file in 1 MB chunks
+                    chunk_size = 1024 * 1024
+                    while True:
+                        chunk = input_file.read(chunk_size)
+                        if not chunk:
+                            break
+                        # Decode the chunk and clean it
+                        chunk_decoded = chunk.decode('utf-8', 'ignore')
+                        chunk_cleaned = clean_string(chunk_decoded)
+                        # Write the cleaned chunk to the output file
+                        chunk_encoded = chunk_cleaned.encode('utf-8')
+                        output_file.write(chunk_encoded)
 
-    # Replace the "fileContent" value with null and remove newline characters within the base64-encoded string
-    file_contents = re.sub(r'("fileContent"\s*:\s*)"[^"]*"', r'\1null', file_contents)
+            print(f"Cleaning of JSON file is complete. Results are saved to {cleaned_filename}")
 
-    # Clean the contents of the JSON file
-    cleaned_contents = clean_string(file_contents)
+        except EOFError:
+            print(f"Error: {filepath} is a corrupt .json.gz file.")
+    else:
+        print(f"Error: {filepath} is not a .json.gz file.")
 
-    # Write the cleaned JSON file
-    print(f"Writing {cleaned_filename}...")
-    with open(cleaned_filename, 'w', encoding='utf-8') as cleaned_file:
-        cleaned_file.write(cleaned_contents)
 
-    print(f"Cleaning of JSON file is complete. Results are saved to {cleaned_filename}")
+if __name__ == "__main__":
+    filepath = "/path/to/json/file.json.gz"
+    clean_json_file(filepath)

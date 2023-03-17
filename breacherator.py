@@ -16,26 +16,26 @@ args = parser.parse_args()
 
 # List JSON files in directory
 if args.list:
-    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json')]
+    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json.gz')]
     for f in json_files:
         print(os.path.join(args.directory, f))
 
 # Extract schema from JSON files in directory
 elif args.extract:
-    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json')]
+    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json.gz')]
     for f in json_files:
         filepath = os.path.join(args.directory, f)
         schema_extractor.extract_schema(filepath)
 
 # Clean JSON files in directory
 elif args.clean:
-    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json')]
+    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json.gz')]
     for f in json_files:
         filepath = os.path.join(args.directory, f)
-        json_cleaner.clean_json(filepath)
+        json_cleaner.clean_json_file(filepath)
 
 # Default behavior: list JSON files in directory
 else:
-    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json')]
+    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json.gz')]
     for f in json_files:
         print(os.path.join(args.directory, f))
