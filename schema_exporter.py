@@ -2,8 +2,6 @@ import ijson
 import json
 import os
 from decimal import Decimal
-
-
 def extract_schema_from_file(filepath):
     with open(filepath, 'r') as file:
         objects = ijson.items(file, 'cyberTriageAgentOutput.item.cyberTriageOutputSection.item')
@@ -20,7 +18,6 @@ def extract_schema_from_file(filepath):
             json.dump(schema, outfile, indent=4)
 
         return schema
-
 
 def extract_schema(obj, schema):
     for key, value in obj.items():
@@ -43,7 +40,6 @@ def cast_decimals_to_float(schema):
             schema[key] = list(value)  # convert set to list
     return schema
 
-
 def sort_and_remove_duplicates(schema):
     new_schema = {}
     for key, value in schema.items():
@@ -52,7 +48,6 @@ def sort_and_remove_duplicates(schema):
         else:
             new_schema[key] = sorted(list(set(value)))
     return new_schema
-
 
 def extract_schemas_from_directory(directory):
     for filename in os.listdir(directory):

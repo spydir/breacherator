@@ -30,7 +30,6 @@ def clean_json_file(filepath):
     else:
         print(f"Error: {filepath} is not a .json.gz file.")
 
-
 if __name__ == "__main__":
     filepath = "/path/to/json/file.json.gz"
     clean_json_file(filepath)
