@@ -1,78 +1,62 @@
 import ijson
 import json
 import os
+from decimal import Decimal
 
-def extract_schema(filepath):
-    with open(filepath, 'rb') as file:
-        parser = ijson.items(file, 'cyberTriageAgentOutput.item.cyberTriageOutputSection.item')
 
+def extract_schema_from_file(filepath):
+    with open(filepath, 'r') as file:
+        objects = ijson.items(file, 'cyberTriageAgentOutput.item.cyberTriageOutputSection.item')
         schema = {}
+        for obj in objects:
+            schema = extract_schema(obj, schema)
 
-        for obj in parser:
-            if isinstance(obj, dict):
-                for key, value in obj.items():
-                    if isinstance(value, list):
-                        if len(value) > 0 and isinstance(value[0], dict):
-                            schema[key] = [extract_schema(v) for v in value]
-                        else:
-                            schema[key] = [type(v).__name__ for v in value]
-                    elif isinstance(value, dict):
-                        schema[key] = extract_schema(value)
-                    else:
-                        schema[key] = type(value).__name__
-            elif isinstance(obj, list):
-                if len(obj) > 0 and isinstance(obj[0], dict):
-                    schema = [extract_schema(elem) for elem in obj]
-                else:
-                    schema = [type(elem).__name__ for elem in obj]
-            else:
-                schema = type(obj).__name__
+        # Sort schema keys alphabetically and remove duplicates
+        schema = sort_and_remove_duplicates(schema)
+
+        # Write schema to file
+        schema_filepath = f"{os.path.splitext(filepath)[0]}_schema.json"
+        with open(schema_filepath, 'w') as outfile:
+            json.dump(schema, outfile, indent=4)
+
         return schema
 
-def sort_schema(schema):
-    sorted_schema = {}
-    for key in sorted(schema.keys()):
-        value = schema[key]
+
+def extract_schema(obj, schema):
+    for key, value in obj.items():
         if isinstance(value, dict):
-            sorted_schema[key] = sort_schema(value)
-        elif isinstance(value, list):
-            sorted_schema[key] = []
-            for item in value:
-                if isinstance(item, dict):
-                    sorted_schema[key].append(sort_schema(item))
-                else:
-                    sorted_schema[key].append(item)
+            schema[key] = extract_schema(value, schema.get(key, {}))
         else:
-            sorted_schema[key] = value
+            schema[key] = schema.get(key, set())
+            schema[key].add(type(value).__name__)
+    return schema
 
-    return sorted_schema
 
-def remove_duplicates(schema):
-    cleaned_schema = {}
+def cast_decimals_to_float(schema):
     for key, value in schema.items():
         if isinstance(value, dict):
-            cleaned_value = remove_duplicates(value)
-            if cleaned_value not in cleaned_schema.values():
-                cleaned_schema[key] = cleaned_value
+            schema[key] = cast_decimals_to_float(value)
+        elif isinstance(value, set):
+            if 'Decimal' in value:
+                value.remove('Decimal')
+                value.add('float')
+            schema[key] = list(value)  # convert set to list
+    return schema
+
+
+def sort_and_remove_duplicates(schema):
+    new_schema = {}
+    for key, value in schema.items():
+        if isinstance(value, dict):
+            new_schema[key] = sort_and_remove_duplicates(value)
         else:
-            cleaned_schema[key] = value
+            new_schema[key] = sorted(list(set(value)))
+    return new_schema
 
-    return cleaned_schema
 
-if __name__ == "__main__":
-    filepath = "/path/to/json/file.json"
-
-    schema = extract_schema(filepath)
-
-    if schema:
-        sorted_schema = sort_schema(schema)
-        cleaned_schema = remove_duplicates(sorted_schema)
-
-        schema_filename = os.path.splitext(filepath)[0] + "_schema.json"
-
-        with open(schema_filename, 'w', encoding='utf-8') as schema_file:
-            json.dump(cleaned_schema, schema_file, ensure_ascii=False, indent=2)
-
-        print(f"Schema of JSON data is saved to {schema_filename}")
-    else:
-        print("Error: JSON data not found in file.")
+def extract_schemas_from_directory(directory):
+    for filename in os.listdir(directory):
+        print(filename)
+        if filename.endswith('_clean.json'):
+            filepath = os.path.join(directory, filename)
+            extract_schema_from_file(filepath)

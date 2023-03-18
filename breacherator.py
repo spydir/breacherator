@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 import json_cleaner
 import schema_extractor
 
@@ -22,10 +23,12 @@ if args.list:
 
 # Extract schema from JSON files in directory
 elif args.extract:
-    json_files = [f for f in os.listdir(args.directory) if f.endswith('.json.gz')]
-    for f in json_files:
-        filepath = os.path.join(args.directory, f)
-        schema_extractor.extract_schema(filepath)
+    for filename in os.listdir(args.directory):
+        if filename.endswith('_clean.json'):
+            filepath = os.path.join(args.directory, filename)
+            print(filepath)
+            schema = schema_extractor.extract_schema_from_file(filepath)
+            print(json.dumps(schema, indent=2))
 
 # Clean JSON files in directory
 elif args.clean:
