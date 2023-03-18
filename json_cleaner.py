@@ -15,17 +15,13 @@ def clean_json_file(filepath):
         filename, ext = os.path.splitext(basename)
         filename, ext = os.path.splitext(filename)
         tmp_filename = os.path.join(dirname, f"{filename}.tmp")
+        cleaned_filename = os.path.join(dirname, f"{filename}_clean.json")
 
         # Call zgrep command to remove "fileContent" key:value pair
         print(f"Removing 'fileContent' key:value pair from {filepath}...")
-        with open(tmp_filename, 'w') as f:
-            subprocess.run(['zgrep', '-v', '"fileContent" :', filepath], stdout=f)
-
-        # Call tr command to remove bad characters
-        cleaned_filename = os.path.join(dirname, f"{filename}_clean.json")
         print(f"Cleaning {cleaned_filename}...")
         subprocess.run(['chmod', '+x', './json_cleaner.sh'])
-        subprocess.run(['./json_cleaner.sh', tmp_filename, cleaned_filename])
+        subprocess.run(['./json_cleaner.sh', filepath, tmp_filename, cleaned_filename])
 
     else:
         print(f"Error: {filepath} is not a .json.gz file.")
